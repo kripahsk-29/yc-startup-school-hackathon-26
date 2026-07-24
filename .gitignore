@@ -42,3 +42,12 @@ next-env.d.ts
 
 # taste-test runtime data (persisted picks) — not committed
 /data/
+
+# python (backend/)
+__pycache__/
+*.pyc
+.venv/
+
+# taste-test backend runtime data — not committed, delete/reset to start over
+backend/state.json
+backend/uploads/
