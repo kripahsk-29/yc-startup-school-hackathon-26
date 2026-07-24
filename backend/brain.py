@@ -138,11 +138,17 @@ def extract_taste_model(state):
 
 
 def curate(state):
+    # Exclude the real person's own board from the candidate pool so the
+    # model can never "pick" the exact images the real board uses — the
+    # two boards must be disjoint or the eval test is meaningless.
+    real_ids = set(state.get("real_moodboard", []))
+    candidates = [im for im in state["pool_images"] if im["id"] not in real_ids]
+
     content = [{"type": "text", "text": CURATION_PROMPT.format(
         taste_model=json.dumps(state["taste_model"], indent=2))}]
-    content += _labeled_images(state["pool_images"], cap=50)
+    content += _labeled_images(candidates, cap=50)
     result = _call(content)
-    pool_ids = {im["id"] for im in state["pool_images"]}
+    pool_ids = {im["id"] for im in candidates}
     result["picks"] = [p for p in result.get("picks", []) if p in pool_ids][:9]
     if len(result["picks"]) != 9:
         raise RuntimeError(f"Curation returned {len(result['picks'])} valid picks, need 9. Raw: {result}")
