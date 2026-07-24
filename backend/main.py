@@ -10,7 +10,7 @@ import shutil
 import uuid
 from pathlib import Path
 
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File, HTTPException, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
@@ -37,6 +37,7 @@ DEFAULT_STATE = {
     "reasons": {},
     "real_moodboard": [],   # 9 ids the human picked
     "panel_notes": [],      # free-text confusion notes from A's run, for v2
+    "rounds": {},           # {"v1": {"model_ids": [id x9], "reasons": {...}}, "v2": {...}}
 }
 
 
@@ -55,6 +56,28 @@ def img_by_id(state, iid):
         if im["id"] == iid:
             return im
     return None
+
+
+def _resolve_url(state, iid, request: Request):
+    """id -> absolute URL. Local uploads are stored as relative /files/...
+    paths; make them absolute against whatever host this request came in on
+    (works for localhost, LAN, or an ngrok tunnel without config). External
+    URLs (pasted Pinterest links etc.) pass through unchanged."""
+    img = img_by_id(state, iid)
+    if img is None:
+        return None
+    url = img["url"]
+    if url.startswith("/"):
+        return str(request.base_url).rstrip("/") + url
+    return url
+
+
+def _current_version(state):
+    """brain.py's extraction/refine prompts stamp taste_model_version (v1,
+    v2, ...) into the model JSON — reuse that as the round label so it can't
+    drift from what actually produced the picks."""
+    tm = state.get("taste_model") or {}
+    return tm.get("taste_model_version") or "v1"
 
 
 # ---------- ingestion ----------
@@ -193,6 +216,10 @@ def curate():
     result = brain.curate(state)
     state["picks"] = result["picks"]
     state["reasons"] = result.get("reasons", {})
+    state["rounds"][_current_version(state)] = {
+        "model_ids": result["picks"],
+        "reasons": result.get("reasons", {}),
+    }
     save_state(state)
     return result
 
@@ -214,6 +241,10 @@ def refine(body: RefineBody):
     result = brain.curate(state)
     state["picks"] = result["picks"]
     state["reasons"] = result.get("reasons", {})
+    state["rounds"][_current_version(state)] = {
+        "model_ids": result["picks"],
+        "reasons": result.get("reasons", {}),
+    }
     save_state(state)
     return {"taste_model": v2, "picks": result["picks"], "reasons": result.get("reasons", {})}
 
@@ -234,20 +265,41 @@ def set_real_moodboard(body: RealBoard):
     return {"ok": True}
 
 
-@app.get("/handoff")
-def handoff():
-    """THE cross-person contract. A polls this. Shape frozen at 12:00:
-    { picks: [id x9], real_moodboard: [id x9] }"""
+@app.get("/round")
+def round_boards(round: str, request: Request):
+    """THE frozen contract (CONTRACTS.md / lib/contracts.ts, RoundBoards):
+    GET /round?round=<version> -> { real_moodboard: [url x9], model_moodboard: [url x9] }
+    real_moodboard is fixed once set; model_moodboard is per-version so a v1
+    request still returns v1's board even after /refine has produced v2."""
     state = load_state()
-    return {"picks": state["picks"], "real_moodboard": state["real_moodboard"]}
+    r = state["rounds"].get(round)
+    if r is None:
+        raise HTTPException(404, f"No round '{round}' yet. Known: {list(state['rounds'])}")
+    return {
+        "model_moodboard": [_resolve_url(state, i, request) for i in r["model_ids"]],
+        "real_moodboard": [_resolve_url(state, i, request) for i in state["real_moodboard"]],
+    }
+
+
+@app.get("/handoff")
+def handoff(request: Request):
+    """Convenience alias for whatever's most current — same shape as /round,
+    unversioned. Prefer /round?round=<v> for anything the score screen needs
+    to keep separate per version."""
+    state = load_state()
+    return {
+        "model_moodboard": [_resolve_url(state, i, request) for i in state["picks"]],
+        "real_moodboard": [_resolve_url(state, i, request) for i in state["real_moodboard"]],
+    }
 
 
 @app.get("/handoff/fake")
 def handoff_fake():
-    """For A to build against before the brain works."""
+    """For A to build against before the brain works. Static placeholder URLs
+    so her task page renders images right now, no dependency on my server."""
     return {
-        "picks": [f"p{i:02d}" for i in range(1, 10)],
-        "real_moodboard": [f"p{i:02d}" for i in range(10, 19)],
+        "model_moodboard": [f"https://picsum.photos/seed/model{i}/480" for i in range(1, 10)],
+        "real_moodboard": [f"https://picsum.photos/seed/real{i}/480" for i in range(1, 10)],
     }
 
 
