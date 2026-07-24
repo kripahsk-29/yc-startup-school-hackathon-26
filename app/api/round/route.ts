@@ -16,5 +16,14 @@ export async function GET(request: NextRequest) {
     real_moodboard: stubBoard(round, "real"),
     model_moodboard: stubBoard(round, "model"),
   };
+
+  const overlap = body.real_moodboard.filter((url) => body.model_moodboard.includes(url));
+  if (overlap.length > 0) {
+    console.warn(
+      `[round ${round}] real_moodboard and model_moodboard share ${overlap.length} identical URL(s):`,
+      overlap
+    );
+  }
+
   return Response.json(body);
 }
