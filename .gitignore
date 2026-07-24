@@ -51,3 +51,4 @@ __pycache__/
 # taste-test backend runtime data — not committed, delete/reset to start over
 backend/state.json
 backend/uploads/
+.env*.local

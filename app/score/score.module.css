@@ -7,14 +7,15 @@
    ============================================================ */
 
 .screen {
-  /* --- named tokens (a palette with a point of view) --- */
-  --paper: #e5e6e1;        /* cool archival paper */
-  --paper-raised: #eeefea; /* raised instrument face */
-  --ink: #1b1d1c;          /* deep cool graphite — text, needle, ticks */
-  --ink-soft: #62655f;     /* quiet secondary */
-  --line: #c7c9c2;         /* hairline ticks */
-  --line-strong: #a9aca4;  /* major ticks */
-  --signal: #e5372a;       /* saturated vermilion — ONLY the live number */
+  /* --- tokens matched to the TARA landing (wild.as language) --- */
+  --paper: #fbfbf9;        /* graph-paper white */
+  --paper-raised: #fbfbf9;
+  --ink: #0e0e10;          /* text, needle, ticks */
+  --ink-soft: #8a8a86;     /* quiet mono secondary */
+  --line: rgba(14, 14, 16, 0.18);   /* hairline ticks */
+  --line-strong: rgba(14, 14, 16, 0.42); /* major ticks */
+  --signal: #c8102e;       /* landing red — ONLY the live number */
+  --grid: rgba(14, 14, 16, 0.05);
 
   min-height: 100vh;
   width: 100%;
@@ -24,9 +25,11 @@
   padding: clamp(20px, 5vw, 56px);
   box-sizing: border-box;
   color: var(--ink);
-  font-family: var(--tt-body), system-ui, -apple-system, sans-serif;
-  background:
-    radial-gradient(125% 90% at 50% 8%, #edeee9 0%, var(--paper) 52%, #dcddd6 100%);
+  font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+  background-color: var(--paper);
+  background-image: linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 28px 28px;
   /* commit to the palette regardless of OS theme — this is a designed instrument */
   -webkit-font-smoothing: antialiased;
 }
@@ -42,7 +45,8 @@
 
 /* --- eyebrow / subject --- */
 .eyebrow {
-  font-size: 12px;
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 11px;
   letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--ink-soft);
@@ -51,7 +55,7 @@
 }
 .subject {
   margin: 10px 0 0;
-  font-family: var(--tt-display), var(--tt-body), sans-serif;
+  font-family: var(--font-geist-sans), sans-serif;
   font-weight: 500;
   font-size: clamp(17px, 2.4vw, 21px);
   color: var(--ink);
@@ -83,7 +87,7 @@
 }
 .tickLabel {
   fill: var(--ink-soft);
-  font-family: var(--tt-body), sans-serif;
+  font-family: var(--font-geist-mono), monospace;
   font-size: 12px;
   font-weight: 500;
   font-variant-numeric: tabular-nums;
@@ -94,14 +98,14 @@
 }
 .equilibriumLabel {
   fill: var(--ink);
-  font-family: var(--tt-display), sans-serif;
+  font-family: var(--font-geist-sans), sans-serif;
   font-size: 12.5px;
   font-weight: 600;
   letter-spacing: 0.02em;
 }
 .equilibriumSub {
   fill: var(--ink-soft);
-  font-family: var(--tt-body), sans-serif;
+  font-family: var(--font-geist-mono), monospace;
   font-size: 10.5px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -127,7 +131,7 @@
 }
 .ghostLabel {
   fill: var(--ink-soft);
-  font-family: var(--tt-body), sans-serif;
+  font-family: var(--font-geist-mono), monospace;
   font-size: 11px;
   font-weight: 500;
 }
@@ -141,7 +145,7 @@
   line-height: 1;
 }
 .number {
-  font-family: var(--tt-display), var(--tt-body), sans-serif;
+  font-family: var(--font-geist-sans), sans-serif;
   font-weight: 700;
   font-size: clamp(84px, 20vw, 176px);
   line-height: 0.88;
@@ -152,7 +156,8 @@
 }
 .numberLabel {
   margin-top: 14px;
-  font-size: 13px;
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 12px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--ink-soft);
@@ -163,7 +168,7 @@
 /* --- verdict --- */
 .verdict {
   margin: clamp(18px, 3.5vw, 30px) 0 0;
-  font-family: var(--tt-display), var(--tt-body), sans-serif;
+  font-family: var(--font-geist-sans), sans-serif;
   font-weight: 500;
   font-size: clamp(20px, 3.6vw, 30px);
   line-height: 1.22;
@@ -192,15 +197,16 @@
 }
 .button {
   appearance: none;
-  border: 1.5px solid var(--ink);
+  border: 1px solid var(--ink);
   background: transparent;
   color: var(--ink);
-  font-family: var(--tt-body), sans-serif;
-  font-size: 14.5px;
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 12px;
   font-weight: 500;
-  letter-spacing: 0.01em;
-  padding: 13px 24px;
-  border-radius: 999px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  padding: 14px 26px;
+  border-radius: 0;
   cursor: pointer;
   transition: background 160ms ease, color 160ms ease, transform 120ms ease;
 }
@@ -245,7 +251,8 @@
 /* footer meta */
 .meta {
   margin-top: clamp(22px, 3vw, 30px);
-  font-size: 12px;
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 11px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--ink-soft);

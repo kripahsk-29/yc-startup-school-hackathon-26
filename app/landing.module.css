@@ -1,0 +1,453 @@
+/* TARA landing — wild.as language: graph-paper white, grotesque type,
+   mono labels, pixel mosaics. Direction: design-inspo/PALETTE.md (v2).
+   Hard rule: no cards. Whitespace + hairlines only. */
+
+.page {
+  --bg: #fbfbf9;
+  --ink: #0e0e10;
+  --mut: #8a8a86;
+  --hair: rgba(14, 14, 16, 0.1);
+  --grid: rgba(14, 14, 16, 0.05);
+  --accent: #96281b;
+  --red: #c8102e;
+
+  background-color: var(--bg);
+  background-image: linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 28px 28px;
+  color: var(--ink);
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  overflow-x: hidden;
+  min-height: 100vh;
+}
+
+.page :is(a) {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* ---------------------------------------------------------------- boot */
+
+.boot {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2rem;
+  background: var(--ink, #0e0e10);
+  color: #fbfbf9;
+  cursor: pointer;
+  transition: opacity 0.6s ease;
+}
+
+.bootGone {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.bootAscii {
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 13px;
+  line-height: 1.25;
+}
+
+.bootLines {
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  color: rgba(251, 251, 249, 0.65);
+  min-height: 5.5em;
+  text-align: left;
+}
+
+.bootLines p:first-child {
+  color: #d8f24b;
+}
+
+/* -------------------------------------------------------------- topbar */
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 1rem 2.5rem;
+  background: rgba(251, 251, 249, 0.9);
+  backdrop-filter: blur(6px);
+  border-bottom: 1px solid var(--hair);
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+}
+
+.topbarLink {
+  color: var(--accent);
+}
+
+.topbarLink:hover {
+  color: var(--ink);
+}
+
+/* ------------------------------------------------------------- shared */
+
+.label {
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--mut);
+  margin: 0 0 1rem;
+}
+
+.section,
+.sectionWide {
+  width: 100%;
+  max-width: 60rem;
+  margin: 0 auto;
+  padding: 8rem 2.5rem;
+}
+
+.sectionWide {
+  max-width: 80rem;
+}
+
+.h2 {
+  font-size: clamp(2.2rem, 4.6vw, 3.8rem);
+  line-height: 1.08;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  margin: 0 0 1.6rem;
+}
+
+.para {
+  max-width: 40rem;
+  font-size: 1.25rem;
+  line-height: 1.6;
+  margin: 1.4rem 0;
+  color: var(--ink);
+}
+
+/* ---------------------------------------------------------------- hero */
+
+.hero {
+  max-width: 80rem;
+  margin: 0 auto;
+  padding: 9rem 2.5rem 5rem;
+}
+
+.heroTitle {
+  font-size: clamp(3.6rem, 9vw, 8.5rem);
+  line-height: 0.98;
+  font-weight: 550;
+  letter-spacing: -0.03em;
+  margin: 0 0 2.2rem;
+}
+
+.heroMark {
+  margin: 1.6rem 0 2rem;
+}
+
+.heroPara {
+  max-width: 36rem;
+  font-size: 1.25rem;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* -------------------------------------------------------- heatmap band */
+
+.band {
+  padding: 3rem 0 6rem;
+}
+
+.pixelField {
+  display: block;
+  width: 100%;
+}
+
+.bandCap {
+  max-width: 80rem;
+  margin: 1.4rem auto 0;
+  padding: 0 2.5rem;
+}
+
+/* ----------------------------------------------------------- manifesto */
+
+.statement {
+  font-size: clamp(1.9rem, 3.6vw, 3rem);
+  line-height: 1.25;
+  font-weight: 500;
+  letter-spacing: -0.015em;
+  margin: 3rem 0 0;
+}
+
+.statementSmall {
+  font-size: clamp(1.4rem, 2.4vw, 1.9rem);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  margin: 4rem 0 0;
+}
+
+/* ------------------------------------------------------------- duality */
+
+.duality {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4rem;
+  margin: 2rem 0 3rem;
+}
+
+.dualCol {
+  text-align: center;
+}
+
+.dualGlyph {
+  margin: 0 auto 2rem;
+}
+
+.dualText {
+  font-size: 1.2rem;
+  line-height: 1.55;
+  max-width: 24rem;
+  margin: 0 auto;
+}
+
+.dualText em {
+  color: var(--accent);
+  font-style: italic;
+}
+
+/* -------------------------------------------------------------- ledger */
+
+.ledger {
+  margin-top: 3.5rem;
+}
+
+.ledgerRow {
+  display: grid;
+  grid-template-columns: 7rem 1fr;
+  align-items: baseline;
+  gap: 2rem;
+  padding: 1.6rem 0;
+  border-top: 1px solid var(--hair);
+}
+
+.ledgerNum {
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  color: var(--accent);
+}
+
+.ledgerTitle {
+  font-size: 1.4rem;
+  font-weight: 500;
+  margin: 0 0 0.3rem;
+  transition: color 0.25s ease;
+}
+
+.ledgerRow:hover .ledgerTitle {
+  color: var(--accent);
+}
+
+.ledgerCap {
+  font-size: 1rem;
+  line-height: 1.55;
+  color: rgba(14, 14, 16, 0.66);
+  margin: 0;
+  max-width: 36rem;
+}
+
+/* ------------------------------------------------------------ exhibits */
+
+.exhibits {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3rem;
+  margin-top: 3.5rem;
+}
+
+.exhibit {
+  margin: 0;
+}
+
+.exhibitGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 3px;
+}
+
+.exhibitGrid img,
+.exhibitBlank {
+  aspect-ratio: 1;
+  width: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.exhibitBlank {
+  background: rgba(14, 14, 16, 0.06);
+}
+
+/* ----------------------------------------------------------------- cta */
+
+.ctaLine {
+  display: flex;
+  align-items: baseline;
+  gap: 1.6rem;
+  margin-top: 3.5rem;
+}
+
+.inkLink {
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  color: var(--accent);
+  border-bottom: 1px solid var(--accent);
+  padding-bottom: 0.25rem;
+}
+
+.inkLink:hover {
+  color: var(--ink);
+  border-color: var(--ink);
+}
+
+.ctaNote {
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--mut);
+}
+
+/* ------------------------------------------------------------- reading */
+
+.scores {
+  display: flex;
+  align-items: flex-end;
+  gap: clamp(2.5rem, 7vw, 7rem);
+  margin-top: 3rem;
+}
+
+.scoreNum {
+  font-size: clamp(5rem, 11vw, 10rem);
+  line-height: 1;
+  font-weight: 550;
+  letter-spacing: -0.03em;
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.deltaNum {
+  font-size: clamp(2.6rem, 5vw, 4.4rem);
+  line-height: 1.1;
+  font-weight: 550;
+  color: var(--red);
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.scoreMeta {
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  color: var(--mut);
+  margin-top: 0.9rem;
+}
+
+/* -------------------------------------------------------------- footer */
+
+.footer {
+  border-top: 1px solid var(--hair);
+  padding: 4rem 2.5rem 3.5rem;
+  max-width: 80rem;
+  margin: 0 auto;
+}
+
+.footerLine {
+  font-size: clamp(1.5rem, 2.6vw, 2rem);
+  font-weight: 500;
+  margin: 0 0 2rem;
+}
+
+.footerLine em {
+  color: var(--accent);
+  font-style: italic;
+}
+
+.footerNav {
+  display: flex;
+  gap: 3rem;
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  color: var(--mut);
+}
+
+.footerNav a:hover {
+  color: var(--accent);
+}
+
+/* ------------------------------------------------------- pixel glyphs */
+
+.pixelGlyph {
+  display: inline-grid;
+  gap: 3px;
+  width: max-content;
+}
+
+.px,
+.pxOff {
+  width: 12px;
+  height: 12px;
+}
+
+.px {
+  background: var(--ink);
+}
+
+/* -------------------------------------------------------------- motion */
+
+.reveal {
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity 0.8s cubic-bezier(0.2, 0.6, 0.2, 1),
+    transform 0.8s cubic-bezier(0.2, 0.6, 0.2, 1);
+}
+
+.revealIn {
+  opacity: 1;
+  transform: none;
+}
+
+.word {
+  opacity: 0.12;
+  transition: opacity 0.35s ease;
+}
+
+.wordOn {
+  opacity: 1;
+}
+
+/* -------------------------------------------------------- small screens */
+
+@media (max-width: 900px) {
+  .duality,
+  .exhibits {
+    grid-template-columns: 1fr;
+  }
+  .scores {
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+  .ledgerRow {
+    grid-template-columns: 4.5rem 1fr;
+  }
+  .topbar {
+    padding: 1rem 1.2rem;
+  }
+}

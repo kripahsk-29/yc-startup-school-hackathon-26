@@ -5,21 +5,40 @@ import type { Score } from "@/lib/contracts";
 import styles from "./score.module.css";
 
 // ------------------------------------------------------------
-// FAKE DATA — two versions, to sell the v1 -> v2 needle move.
-// Shapes match the frozen Score contract { version, n, spot_rate, score }.
-// score = round(|spot_rate - 0.5| * 200).  Real data replaces this later.
+// LIVE DATA — both versions polled from GET /api/score?round=<v>
+// (frozen Score contract { version, n, spot_rate, score }).
+// While a round has no picks (n === 0, nulls from the API) the
+// needle rests at the coin-flip position: spot_rate 0.5, score 0.
 // ------------------------------------------------------------
-type Round = Score & { spot_rate: number; score: number };
+type RoundKey = "v1" | "v2";
+type Round = { version: RoundKey; n: number; spot_rate: number; score: number };
 
-const DATA: Record<"v1" | "v2", Round> = {
-  v1: { version: "v1", n: 30, spot_rate: 0.83, score: 66 },
-  v2: { version: "v2", n: 30, spot_rate: 0.6, score: 20 },
+const EMPTY: Record<RoundKey, Round> = {
+  v1: { version: "v1", n: 0, spot_rate: 0.5, score: 0 },
+  v2: { version: "v2", n: 0, spot_rate: 0.5, score: 0 },
 };
 
-const VERDICT: Record<"v1" | "v2", { spotted: number; line: string }> = {
-  v1: { spotted: 25, line: "25 of 30 strangers still spotted the real one." },
-  v2: { spotted: 18, line: "Now only 18 can." },
-};
+const POLL_MS = 5000;
+
+function normalize(v: RoundKey, s: Score | null): Round {
+  if (!s || s.spot_rate == null || s.score == null) {
+    return { version: v, n: s?.n ?? 0, spot_rate: 0.5, score: 0 };
+  }
+  return { version: v, n: s.n, spot_rate: s.spot_rate, score: s.score };
+}
+
+function verdictFor(v: RoundKey, r: Round): { spotted: number; line: string } {
+  const spotted = Math.round(r.spot_rate * r.n);
+  if (r.n === 0) {
+    return {
+      spotted: 0,
+      line: v === "v1" ? "Waiting for strangers…" : "Waiting for v2 picks…",
+    };
+  }
+  return v === "v1"
+    ? { spotted, line: `${spotted} of ${r.n} strangers still spotted the real one.` }
+    : { spotted, line: `Now only ${spotted} can.` };
+}
 
 // ------------------------------------------------------------
 // GAUGE GEOMETRY. Semicircle: 0% at left, 50% straight up
@@ -57,21 +76,29 @@ function prefersReducedMotion(): boolean {
 }
 
 export default function ScoreClient() {
-  const [version, setVersion] = useState<"v1" | "v2">("v1");
-  const [shown, setShown] = useState<"v1" | "v2">("v1"); // verdict flips at animation end
+  const [version, setVersion] = useState<RoundKey>("v1");
+  const [shown, setShown] = useState<RoundKey>("v1"); // verdict flips at animation end
   const [animating, setAnimating] = useState(false);
+  const [data, setData] = useState<Record<RoundKey, Round>>(EMPTY);
   const [display, setDisplay] = useState({
-    spot: DATA.v1.spot_rate,
-    score: DATA.v1.score,
+    spot: EMPTY.v1.spot_rate,
+    score: EMPTY.v1.score,
   });
 
   const displayRef = useRef(display);
+  const dataRef = useRef(data);
+  const animatingRef = useRef(animating);
+  const versionRef = useRef(version);
   const rafRef = useRef<number | null>(null);
   displayRef.current = display;
+  dataRef.current = data;
+  animatingRef.current = animating;
+  versionRef.current = version;
 
-  const animateTo = useCallback((next: "v1" | "v2") => {
+  const animateTo = useCallback((next: RoundKey) => {
     const from = { ...displayRef.current };
-    const to = { spot: DATA[next].spot_rate, score: DATA[next].score };
+    const target = dataRef.current[next];
+    const to = { spot: target.spot_rate, score: target.score };
 
     if (prefersReducedMotion()) {
       setDisplay(to);
@@ -104,6 +131,44 @@ export default function ScoreClient() {
     rafRef.current = requestAnimationFrame(tick);
   }, []);
 
+  // Poll both rounds; when the currently-shown round's numbers move
+  // (picks landing live), sweep the needle to the fresh values.
+  useEffect(() => {
+    let active = true;
+    const load = async () => {
+      try {
+        const [v1, v2] = await Promise.all(
+          (["v1", "v2"] as const).map(async (v) => {
+            const res = await fetch(`/api/score?round=${v}`, { cache: "no-store" });
+            if (!res.ok) return null;
+            return (await res.json()) as Score;
+          })
+        );
+        if (!active) return;
+        const next = { v1: normalize("v1", v1), v2: normalize("v2", v2) };
+        setData(next);
+        dataRef.current = next;
+
+        const cur = next[versionRef.current];
+        const shownNow = displayRef.current;
+        const moved =
+          Math.abs(cur.spot_rate - shownNow.spot) > 0.0001 ||
+          Math.abs(cur.score - shownNow.score) > 0.0001;
+        if (moved && !animatingRef.current) {
+          animateTo(versionRef.current);
+        }
+      } catch {
+        // transient poll failure — keep last known values
+      }
+    };
+    load();
+    const id = setInterval(load, POLL_MS);
+    return () => {
+      active = false;
+      clearInterval(id);
+    };
+  }, [animateTo]);
+
   useEffect(() => {
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
@@ -120,9 +185,10 @@ export default function ScoreClient() {
   const spotPct = display.spot * 100;
   const rotation = rotationFor(spotPct);
   const scoreShown = Math.round(display.score);
-  const verdict = VERDICT[shown];
-  const round = DATA[shown];
-  const delta = DATA.v1.score - DATA.v2.score; // 46
+  const verdict = verdictFor(shown, data[shown]);
+  const round = data[shown];
+  const delta = data.v1.score - data.v2.score;
+  const hasBothRounds = data.v1.n > 0 && data.v2.n > 0;
 
   // ticks every 5%, majors + labels at 0/25/50/75/100
   const ticks = [];
@@ -156,7 +222,7 @@ export default function ScoreClient() {
 
   return (
     <div className={styles.frame}>
-      <p className={styles.eyebrow}>Taste Test — Image Curation</p>
+      <p className={styles.eyebrow}>TARA · INSTRUMENT No. 001 · IMAGE CURATION</p>
       <p className={styles.subject}>How well the model curated as Poshitha</p>
 
       <div className={styles.gaugeWrap}>
@@ -217,9 +283,9 @@ export default function ScoreClient() {
           </text>
 
           {/* ghost needle — where v1 was, left behind to show the move */}
-          {version === "v2" && (
+          {version === "v2" && data.v1.n > 0 && (
             <g
-              transform={`rotate(${rotationFor(DATA.v1.spot_rate * 100)} ${CX} ${CY})`}
+              transform={`rotate(${rotationFor(data.v1.spot_rate * 100)} ${CX} ${CY})`}
             >
               <line
                 className={styles.ghost}
@@ -264,10 +330,12 @@ export default function ScoreClient() {
       <p className={styles.verdict}>{verdict.line}</p>
       <p className={styles.subreadout}>
         {verdict.spotted} of {round.n} picked the real board · {Math.round(round.spot_rate * 100)}% spotted
-        {shown === "v2" && (
+        {shown === "v2" && hasBothRounds && (
           <>
             {" · "}
-            <span className={styles.delta}>score −{delta} from v1</span>
+            <span className={styles.delta}>
+              score {delta >= 0 ? `−${delta}` : `+${-delta}`} from v1
+            </span>
           </>
         )}
       </p>
@@ -284,7 +352,7 @@ export default function ScoreClient() {
           whiteSpace: "nowrap",
         }}
       >
-        {`${shown}: capture score ${DATA[shown].score}, ${verdict.line}`}
+        {`${shown}: capture score ${data[shown].score}, ${verdict.line}`}
       </p>
 
       <div className={styles.controls}>
@@ -311,7 +379,7 @@ export default function ScoreClient() {
       </div>
 
       <p className={styles.meta}>
-        {version} · n = {DATA[version].n} real strangers · via Terac
+        {version} · n = {data[version].n} real strangers · via Terac
       </p>
     </div>
   );
