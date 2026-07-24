@@ -222,7 +222,7 @@ export default function ScoreClient() {
 
   return (
     <div className={styles.frame}>
-      <p className={styles.eyebrow}>Taste Test — Image Curation</p>
+      <p className={styles.eyebrow}>TARA · INSTRUMENT No. 001 · IMAGE CURATION</p>
       <p className={styles.subject}>How well the model curated as Poshitha</p>
 
       <div className={styles.gaugeWrap}>

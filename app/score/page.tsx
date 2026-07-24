@@ -4,7 +4,7 @@ import ScoreClient from "./score-client";
 import styles from "./score.module.css";
 
 export const metadata: Metadata = {
-  title: "Taste Test — Score",
+  title: "TARA — Score",
   description: "A scoreboard for taste. How far the strangers land from a coin-flip.",
 };
 
