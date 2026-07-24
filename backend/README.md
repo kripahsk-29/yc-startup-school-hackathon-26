@@ -12,13 +12,37 @@ uvicorn main:app --reload --port 8000
 3. Forced choice: click through 20 pairs
 4. Extract -> Curate (real model calls; curate needs pool >= 15)
 5. Pick YOUR real 9 from the same pool, save
-6. /handoff  -> { model_moodboard: [url x9], real_moodboard: [url x9] }   <- A's contract
-   /handoff/fake -> same shape, static placeholder URLs, for A to build against right now
+6. GET /round?round=v1  -> { model_moodboard: [url x9], real_moodboard: [url x9] }   <- A's frozen contract (CONTRACTS.md / lib/contracts.ts)
+   GET /handoff          -> same shape, unversioned "whatever's current" alias
+   GET /handoff/fake      -> same shape, static placeholder URLs, for A to build against before the brain works
+
+Each `/curate` or `/refine` run is stored under its own `taste_model_version`
+(v1, v2, ...) in state.rounds, so `/round?round=v1` still returns v1's board
+even after `/refine` has produced v2 — that's what lets A's task page show
+both rounds side by side.
 
 ## Close the loop (the demo)
 After A's first panel run, paste "what gave the model away" into the
 Brain notes box -> Refine. It builds a v2 taste model and re-curates
 automatically. A re-runs the panel. The number moving = the product.
+
+## IMPORTANT: seed with URLs whose host allows bot fetching
+
+`/extract` and `/curate` send external image URLs to Claude as a `url` source
+— Claude fetches the image itself, and that fetch **respects the host's
+robots.txt**. Hosts that disallow generic crawlers (e.g. `picsum.photos`,
+which blocks almost everything) will 400 with "This URL is disallowed by
+the website's robots.txt file." Confirmed working: `images.unsplash.com`,
+`images.pexels.com`. If A's real Pinterest dump comes back as `pinimg.com`
+links, spot-check a couple against `https://<host>/robots.txt` (or just try
+one through `/extract`) before assuming the batch will work — don't find out
+at 2:30 that half the pool 400s.
+
+Uploaded files (not pasted URLs) sidestep this — they get base64-encoded and
+sent as raw bytes, no fetch involved — but then they're only reachable at
+`/files/...` on whatever host is running this server, which breaks for A's
+task page unless we're on the same network or tunneled. Prefer pasted public
+URLs over uploads for anything A needs to render.
 
 ## Knobs
 - TASTE_MODEL env var to switch Claude model (default claude-sonnet-4-6)
