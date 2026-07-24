@@ -216,3 +216,14 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+
+__pycache__/
+*.pyc
+.env
+venv/
+.venv/
+backend/state.json
+backend/uploads/
+backend/server.log
+.DS_Store
