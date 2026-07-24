@@ -12,8 +12,8 @@ uvicorn main:app --reload --port 8000
 3. Forced choice: click through 20 pairs
 4. Extract -> Curate (real model calls; curate needs pool >= 15)
 5. Pick YOUR real 9 from the same pool, save
-6. /handoff  -> { picks: [id x9], real_moodboard: [id x9] }   <- A's contract
-   /handoff/fake -> same shape, static, for A to build against right now
+6. /handoff  -> { model_moodboard: [url x9], real_moodboard: [url x9] }   <- A's contract
+   /handoff/fake -> same shape, static placeholder URLs, for A to build against right now
 
 ## Close the loop (the demo)
 After A's first panel run, paste "what gave the model away" into the
