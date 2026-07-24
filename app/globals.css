@@ -24,3 +24,17 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* TARA landing palette — single source of truth: design-inspo/PALETTE.md */
+:root {
+  --paper: #f2ede3;
+  --paper-deep: #e7dfcf;
+  --ink: #171412;
+  --accent: #96281b;
+  --accent-bright: #c8102e;
+  --line: #8b8170;
+}
+
+html {
+  scroll-behavior: smooth;
+}
