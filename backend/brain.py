@@ -6,6 +6,7 @@ import base64
 import json
 import mimetypes
 import os
+import re
 from pathlib import Path
 
 import anthropic
@@ -104,7 +105,17 @@ def _parse_json(text):
         text = text.split("```")[1]
         if text.startswith("json"):
             text = text[4:]
-    return json.loads(text.strip())
+    text = text.strip()
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        # Model added prose before/after the JSON despite "no prose" in the
+        # prompt (more likely with large image counts) — fall back to
+        # grabbing the outermost {...} block instead of failing outright.
+        match = re.search(r"\{.*\}", text, re.S)
+        if not match:
+            raise
+        return json.loads(match.group(0))
 
 
 def _call(content, max_tokens=2000):
