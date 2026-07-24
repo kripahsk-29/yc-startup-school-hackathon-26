@@ -11,8 +11,9 @@ type Status = "loading" | "ready" | "submitting" | "done" | "error";
 
 export default function JudgeClient({ round }: { round: string }) {
   const [boards, setBoards] = useState<RoundBoards | null>(null);
-  // Which side holds the real board this visit, decided once per visitor.
-  const [realIsA] = useState(() => Math.random() < 0.5);
+  // Which side holds the real board this visit. Decided client-side only
+  // (inside the effect) so server and client render identical markup.
+  const [realIsA, setRealIsA] = useState(false);
   const [status, setStatus] = useState<Status>("loading");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -25,6 +26,7 @@ export default function JudgeClient({ round }: { round: string }) {
         const data: unknown = await res.json();
         if (!isRoundBoards(data)) throw new Error("Unexpected response shape");
         if (!cancelled) {
+          setRealIsA(Math.random() < 0.5);
           setBoards(data);
           setStatus("ready");
         }
