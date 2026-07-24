@@ -55,7 +55,8 @@ async function smokeTest() {
 // STEP 1 — Create a project (a container for opportunities).
 // ------------------------------------------------------------
 async function createProject(title = "Taste Test") {
-  return terac("/projects", { method: "POST", body: { title } });
+  // v2 API expects `name` (not `title`) — confirmed against live 400 validation.
+  return terac("/projects", { method: "POST", body: { name: title } });
 }
 
 // ------------------------------------------------------------
@@ -75,7 +76,7 @@ async function createOpportunity({ projectId, taskUrl, n = 30, version = "v1" })
       tasks: [
         {
           sequence: 1,
-          task_type: "survey",         // a quick task, not an interview
+          task_type: "activity",       // v2 enum: interview|file_upload|activity — ours is a hosted click task
           review_type: "auto_approve", // don't hand-review 30 people during a hackathon
           task_url: `${taskUrl}?round=${version}`,
           duration_minutes: 2,
