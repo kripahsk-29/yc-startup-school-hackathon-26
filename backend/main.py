@@ -211,8 +211,10 @@ def curate():
     state = load_state()
     if not state["taste_model"]:
         raise HTTPException(400, "Run /extract first")
-    if len(state["pool_images"]) < 15:
-        raise HTTPException(400, f"Pool too small ({len(state['pool_images'])}), aim for ~50")
+    real_ids = set(state["real_moodboard"])
+    candidate_count = len([im for im in state["pool_images"] if im["id"] not in real_ids])
+    if candidate_count < 15:
+        raise HTTPException(400, f"Pool too small after excluding real_moodboard ({candidate_count}), aim for ~50")
     result = brain.curate(state)
     state["picks"] = result["picks"]
     state["reasons"] = result.get("reasons", {})

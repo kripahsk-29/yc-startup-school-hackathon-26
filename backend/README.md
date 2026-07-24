@@ -6,13 +6,17 @@ export ANTHROPIC_API_KEY=sk-...
 uvicorn main:app --reload --port 8000
 # open http://localhost:8000
 
-## Flow (matches the console sections top to bottom)
+## Flow (matches the console sections top to bottom, order matters)
 1. Seed: upload your saves or paste image URLs
 2. Pool: get ~50 candidate URLs in (this is also the forced-choice source)
 3. Forced choice: click through 20 pairs
-4. Extract -> Curate (real model calls; curate needs pool >= 15)
-5. Pick YOUR real 9 from the same pool, save
-6. GET /round?round=v1  -> { model_moodboard: [url x9], real_moodboard: [url x9] }   <- A's frozen contract (CONTRACTS.md / lib/contracts.ts)
+4. Extract (real model call)
+5. Pick YOUR real 9 from the pool, save — **before curating.** /curate excludes
+   whatever's in real_moodboard from the candidate pool it shows the model, so
+   if this step happens after curate, the exclusion has nothing to exclude and
+   the two boards can end up sharing images (this bit us once — see below).
+6. Curate (real model call; needs pool >= 15 *after* excluding real_moodboard)
+7. GET /round?round=v1  -> { model_moodboard: [url x9], real_moodboard: [url x9] }   <- A's frozen contract (CONTRACTS.md / lib/contracts.ts)
    GET /handoff          -> same shape, unversioned "whatever's current" alias
    GET /handoff/fake      -> same shape, static placeholder URLs, for A to build against before the brain works
 
@@ -43,6 +47,21 @@ sent as raw bytes, no fetch involved — but then they're only reachable at
 `/files/...` on whatever host is running this server, which breaks for A's
 task page unless we're on the same network or tunneled. Prefer pasted public
 URLs over uploads for anything A needs to render.
+
+## Board overlap (real_moodboard vs model_moodboard must be disjoint)
+
+A's overlap guardrail in `/api/round` caught this once: `/curate` used to draw
+from the *entire* pool with no idea which images were already in
+`real_moodboard`, so the model could — and did — pick the exact same photos
+the real board used (v1 was 5/9 identical). If the two boards share images,
+strangers aren't judging "which is real," they're staring at near-duplicate
+grids and the score means nothing.
+
+Fixed in `brain.curate()`: images already in `state["real_moodboard"]` are
+filtered out of the candidate pool before it's ever sent to Claude, so
+overlap is now structurally impossible, not just detected after the fact.
+This only works if real_moodboard is already set when `/curate` runs — see
+step 5 above.
 
 ## Knobs
 - TASTE_MODEL env var to switch Claude model (default claude-sonnet-4-6)
