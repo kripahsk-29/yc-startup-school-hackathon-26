@@ -14,11 +14,27 @@ function stubBoard(round: string, kind: "real" | "model"): string[] {
   );
 }
 
+// Guardrail: identical URLs in both boards weaken the "which is real?" test.
+// Warn (don't block) so it surfaces in logs during a run whether the boards
+// came from the backend or the stub.
+function warnOnOverlap(round: string, boards: GetRoundResponse): void {
+  const overlap = boards.real_moodboard.filter((url) =>
+    boards.model_moodboard.includes(url)
+  );
+  if (overlap.length > 0) {
+    console.warn(
+      `[round ${round}] real_moodboard and model_moodboard share ${overlap.length} identical URL(s):`,
+      overlap
+    );
+  }
+}
+
 function stubResponse(round: string, reason: string): Response {
   const body: GetRoundResponse = {
     real_moodboard: stubBoard(round, "real"),
     model_moodboard: stubBoard(round, "model"),
   };
+  warnOnOverlap(round, body);
   return Response.json(body, {
     headers: { "x-taste-source": "stub", "x-taste-fallback-reason": reason },
   });
@@ -53,7 +69,9 @@ export async function GET(request: NextRequest) {
     }
 
     // Real boards from B's backend, validated against the frozen contract.
-    return Response.json(data as GetRoundResponse, {
+    const boards = data as GetRoundResponse;
+    warnOnOverlap(round, boards);
+    return Response.json(boards, {
       headers: { "x-taste-source": "backend" },
     });
   } catch (err) {
