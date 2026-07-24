@@ -1,0 +1,198 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Taste Test — B console</title>
+<style>
+  :root { --ink:#1d1d1f; --line:#d8d5cf; --accent:#2f4a3e; --bg:#f6f5f2; }
+  * { box-sizing:border-box; }
+  body { font:15px/1.5 ui-monospace, "SF Mono", Menlo, monospace; color:var(--ink);
+         background:var(--bg); margin:0; padding:24px; max-width:1000px; margin-inline:auto; }
+  h1 { font-size:17px; letter-spacing:.06em; text-transform:uppercase; }
+  h2 { font-size:13px; letter-spacing:.08em; text-transform:uppercase; margin:0 0 10px;
+       border-bottom:1px solid var(--line); padding-bottom:6px; }
+  section { background:#fff; border:1px solid var(--line); padding:16px; margin-bottom:16px; }
+  button { font:inherit; padding:6px 14px; background:var(--accent); color:#fff; border:0; cursor:pointer; }
+  button.ghost { background:transparent; color:var(--accent); border:1px solid var(--accent); }
+  textarea, input[type=file] { width:100%; font:inherit; margin:6px 0; }
+  textarea { min-height:70px; border:1px solid var(--line); padding:8px; }
+  .row { display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(96px,1fr)); gap:8px; margin-top:10px; }
+  .grid img { width:100%; aspect-ratio:1; object-fit:cover; border:2px solid transparent; cursor:pointer; }
+  .grid .picked img { border-color:var(--accent); }
+  .grid .cell { position:relative; }
+  .grid .tag { position:absolute; top:2px; left:2px; background:#000a; color:#fff; font-size:10px; padding:1px 4px; }
+  #pair { display:flex; gap:16px; justify-content:center; margin:12px 0; }
+  #pair img { width:280px; max-width:44vw; aspect-ratio:1; object-fit:cover; cursor:pointer; border:3px solid transparent; }
+  #pair img:hover { border-color:var(--accent); }
+  pre { background:#f0efeb; padding:10px; overflow:auto; font-size:12.5px; max-height:320px; }
+  .muted { color:#777; font-size:13px; }
+  .count { color:var(--accent); font-weight:bold; }
+</style>
+</head>
+<body>
+<h1>Taste Test — B console</h1>
+
+<section>
+  <h2>1 · Seed (your saves)</h2>
+  <div class="row">
+    <input type="file" id="seedFiles" multiple accept="image/*" style="flex:1">
+    <button onclick="upload('seed')">Upload seed</button>
+  </div>
+  <textarea id="seedUrls" placeholder="or paste image URLs, one per line"></textarea>
+  <button class="ghost" onclick="addUrls('seed')">Add seed URLs</button>
+  <span class="muted">seed: <span class="count" id="seedCount">0</span></span>
+</section>
+
+<section>
+  <h2>2 · Candidate pool (~50)</h2>
+  <div class="row">
+    <input type="file" id="poolFiles" multiple accept="image/*" style="flex:1">
+    <button onclick="upload('pool')">Upload pool</button>
+  </div>
+  <textarea id="poolUrls" placeholder="paste ~50 image URLs, one per line"></textarea>
+  <button class="ghost" onclick="addUrls('pool')">Add pool URLs</button>
+  <span class="muted">pool: <span class="count" id="poolCount">0</span></span>
+</section>
+
+<section>
+  <h2>3 · Forced choice (~20 pairs)</h2>
+  <button onclick="startChoices()">Start</button>
+  <span class="muted">answered: <span class="count" id="choiceCount">0</span> / 20 — click the one you'd save</span>
+  <div id="pair"></div>
+</section>
+
+<section>
+  <h2>4 · Brain</h2>
+  <div class="row">
+    <button onclick="run('extract')">Extract taste model</button>
+    <button onclick="run('curate')">Curate 9</button>
+  </div>
+  <textarea id="notes" placeholder="after A's panel run: paste what gave the model away, then refine"></textarea>
+  <button class="ghost" onclick="refine()">Close loop → v2 + re-curate</button>
+  <pre id="brainOut">—</pre>
+</section>
+
+<section>
+  <h2>5 · Your real moodboard (pick 9 from the pool)</h2>
+  <button class="ghost" onclick="loadRealPicker()">Load pool</button>
+  <button onclick="saveReal()">Save real board (<span id="realCount">0</span>/9)</button>
+  <div class="grid" id="realGrid"></div>
+</section>
+
+<section>
+  <h2>6 · Handoff → A</h2>
+  <button class="ghost" onclick="showHandoff()">GET /handoff</button>
+  <pre id="handoffOut">{ picks: [id×9], real_moodboard: [id×9] }</pre>
+</section>
+
+<script>
+const $ = id => document.getElementById(id);
+const j = async (url, opts) => {
+  const r = await fetch(url, opts);
+  const body = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(body.detail || r.status);
+  return body;
+};
+
+async function refreshCounts() {
+  const s = await j('/state');
+  $('seedCount').textContent = s.seed_images.length;
+  $('poolCount').textContent = s.pool_images.length;
+  $('choiceCount').textContent = s.forced_choices.length;
+}
+
+async function upload(kind) {
+  const files = $(kind + 'Files').files;
+  if (!files.length) return alert('pick files first');
+  const fd = new FormData();
+  for (const f of files) fd.append('files', f);
+  await j(`/${kind}/upload`, { method:'POST', body: fd });
+  refreshCounts();
+}
+
+async function addUrls(kind) {
+  const urls = $(kind + 'Urls').value.split('\n').filter(Boolean);
+  if (!urls.length) return;
+  await j(`/${kind}/urls`, { method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ urls }) });
+  $(kind + 'Urls').value = '';
+  refreshCounts();
+}
+
+// forced choice
+let pairs = [], pi = 0;
+async function startChoices() {
+  try { ({ pairs } = await j('/choices/pairs?n=20')); } catch (e) { return alert(e.message); }
+  pi = 0; showPair();
+}
+function showPair() {
+  const el = $('pair');
+  if (pi >= pairs.length) { el.innerHTML = '<p class="muted">done — go extract</p>'; return; }
+  const { a, b } = pairs[pi];
+  el.innerHTML = '';
+  for (const [img, other] of [[a, b], [b, a]]) {
+    const im = document.createElement('img');
+    im.src = img.url;
+    im.onclick = async () => {
+      await j('/choices/answer', { method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ a_id: a.id, b_id: b.id, winner_id: img.id }) });
+      pi++; showPair(); refreshCounts();
+    };
+    el.appendChild(im);
+  }
+}
+
+async function run(which) {
+  $('brainOut').textContent = which + '… (this is a real model call, give it a sec)';
+  try { $('brainOut').textContent = JSON.stringify(await j('/' + which, { method:'POST' }), null, 2); }
+  catch (e) { $('brainOut').textContent = 'ERROR: ' + e.message; }
+}
+
+async function refine() {
+  const notes = $('notes').value.trim();
+  if (!notes) return alert('paste panel notes first');
+  $('brainOut').textContent = 'refining → v2 → re-curating…';
+  try {
+    $('brainOut').textContent = JSON.stringify(await j('/refine', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ notes }) }), null, 2);
+  } catch (e) { $('brainOut').textContent = 'ERROR: ' + e.message; }
+}
+
+// real moodboard picker
+let realPicks = new Set();
+async function loadRealPicker() {
+  const s = await j('/state');
+  realPicks = new Set(s.real_moodboard);
+  const grid = $('realGrid');
+  grid.innerHTML = '';
+  for (const im of s.pool_images) {
+    const cell = document.createElement('div');
+    cell.className = 'cell' + (realPicks.has(im.id) ? ' picked' : '');
+    cell.innerHTML = `<span class="tag">${im.id}</span><img src="${im.url}">`;
+    cell.onclick = () => {
+      realPicks.has(im.id) ? realPicks.delete(im.id)
+        : (realPicks.size < 9 ? realPicks.add(im.id) : alert('already 9'));
+      cell.classList.toggle('picked', realPicks.has(im.id));
+      $('realCount').textContent = realPicks.size;
+    };
+    grid.appendChild(cell);
+  }
+  $('realCount').textContent = realPicks.size;
+}
+async function saveReal() {
+  try { await j('/real_moodboard', { method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ ids: [...realPicks] }) }); alert('saved'); }
+  catch (e) { alert(e.message); }
+}
+
+async function showHandoff() {
+  $('handoffOut').textContent = JSON.stringify(await j('/handoff'), null, 2);
+}
+
+refreshCounts();
+</script>
+</body>
+</html>
