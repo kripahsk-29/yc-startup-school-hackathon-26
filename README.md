@@ -1,6 +1,7 @@
 # yc-startup-school-hackathon-26
 https://yc-startup-school-hackathon-26.vercel.app/
-a benchmark for identifying taste all in one place, because AI cannot replace your vision >_&lt; (built with the integration of Terac AI)
+
+A benchmark for identifying taste all in one place, because AI cannot replace your vision >_&lt; (built with the integration of Terac AI)
 
 ## Landing page (TARA)
 
