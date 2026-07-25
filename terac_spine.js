@@ -20,13 +20,15 @@ const BASE = "https://terac.com/api/external/v2";
 const KEY = process.env.TERAC_API_KEY; // set this in your shell before running
 
 async function terac(path, { method = "GET", body } = {}) {
+  // Only claim a JSON body when one exists. Bodyless POSTs (e.g. /launch)
+  // must NOT send Content-Type: application/json — Terac tries to parse the
+  // empty body and rejects with 400 PARSE_ERROR.
+  const headers = { "Authorization": `Bearer ${KEY}` };
+  if (body !== undefined) headers["Content-Type"] = "application/json";
   const res = await fetch(BASE + path, {
     method,
-    headers: {
-      "Authorization": `Bearer ${KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: body ? JSON.stringify(body) : undefined,
+    headers,
+    body: body !== undefined ? JSON.stringify(body) : undefined,
   });
   const text = await res.text();
   let json;
@@ -92,7 +94,9 @@ async function createOpportunity({ projectId, taskUrl, n = 30, version = "v1" })
 // links.launch and links.submissions.
 // ------------------------------------------------------------
 async function launch(opportunityId) {
-  return terac(`/opportunities/${opportunityId}/launch`, { method: "POST" });
+  // Terac's launch endpoint requires Content-Type: application/json AND a
+  // parseable body — an empty JSON object satisfies both checks.
+  return terac(`/opportunities/${opportunityId}/launch`, { method: "POST", body: {} });
 }
 
 // ------------------------------------------------------------
