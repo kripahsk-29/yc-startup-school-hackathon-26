@@ -3,6 +3,15 @@ https://yc-startup-school-hackathon-26.vercel.app/
 
 A benchmark for identifying taste all in one place, because AI cannot replace your vision >_&lt; (built with the integration of Terac AI)
 
+## Terac track win — 2nd place, Best Use of Terac
+
+TARA — the first benchmark for personal taste — placed 2nd in the Best Use
+of Terac track at YC Startup School Hackathon 2026. Real strangers, hired
+live through Terac, judged whether an AI captured a person's visual taste.
+The human panel wasn't a feature — it was the measurement.
+
+Named TARA after our friend — it means "star" in Sanskrit.
+
 ## Landing page (TARA)
 
 - `npm run dev` → http://localhost:3000 — the demo-facing story landing.
