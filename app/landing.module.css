@@ -392,6 +392,22 @@
   color: var(--accent);
 }
 
+.footerTeam {
+  margin-top: 3.5rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--hair);
+}
+
+.footerTeam .label {
+  margin-bottom: 0.5rem;
+}
+
+.footerNames {
+  font-size: 1.15rem;
+  font-weight: 500;
+  margin: 0;
+}
+
 /* ------------------------------------------------------- pixel glyphs */
 
 .pixelGlyph {

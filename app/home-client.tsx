@@ -528,6 +528,10 @@ function Footer() {
         <Link href="/score">THE SCORE</Link>
         <span>TARA · SPECIMEN RECORD 001 · 2026</span>
       </nav>
+      <div className={s.footerTeam}>
+        <p className={s.label}>TEAM</p>
+        <p className={s.footerNames}>Poshitha &amp; Kripa</p>
+      </div>
     </footer>
   );
 }
