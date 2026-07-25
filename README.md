@@ -1,5 +1,5 @@
 # yc-startup-school-hackathon-26
-https://yc-startup-school-hackathon-26.vercel.app/
+check it out here - https://yc-startup-school-hackathon-26.vercel.app/
 
 2nd place, Best Use of Terac 
 
