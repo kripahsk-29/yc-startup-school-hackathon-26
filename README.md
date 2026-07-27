@@ -1,7 +1,7 @@
 # startup-school-hackathon-26
 check it out here - https://yc-startup-school-hackathon-26.vercel.app/
 
-2nd place, Best Use of Terac ⭐️⭐️⭐️
+Won 2nd place, Best Use of Terac ⭐️⭐️⭐️
 
 TARA, the first benchmark for taste, placed 2nd in the Best Use of Terac track at YC Startup School Hackathon 2026. 
 
