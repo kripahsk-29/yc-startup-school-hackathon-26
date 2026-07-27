@@ -1,13 +1,13 @@
-# yc-startup-school-hackathon-26
+# startup-school-hackathon-26
 check it out here - https://yc-startup-school-hackathon-26.vercel.app/
 
-2nd place, Best Use of Terac 
+2nd place, Best Use of Terac ⭐️⭐️⭐️
 
 TARA, the first benchmark for taste, placed 2nd in the Best Use of Terac track at YC Startup School Hackathon 2026. 
 
 Everyone has taste. Nobody can write it down. You type "clean but warm" and get slop back. 
 
-So we built a way to measure it. You feed it your stuff (Pinterest board, camera roll, your site, Instagram, even your Spotify playlists) and it pulls out your actual pick and reject rules. Then it curates a moodboard "as you," puts it next to a real one you made, and asks experts (designers, creative directors) which one you actually made. If they can't tell, the model got you. 
+So we built a way to measure it. You feed it your visions (Pinterest board, camera roll, your site, Instagram, even your Spotify playlists) and it pulls out your actual pick and reject rules. Then it curates a moodboard "as you," puts it next to a real one you made, and asks experts (designers, creative directors) which one you actually made. If they can't tell, the model got you. 
 
 Taste has no answer key, so the only way to prove a model captured you is that a real person can't tell its work apart from yours. We hired those experts live through Terac, which made it a real RL loop: their confusion is the signal we feed back in. 
 
